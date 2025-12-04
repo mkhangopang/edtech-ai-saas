@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "vercel-build": "npm install --legacy-peer-deps && next build",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -42,3 +43,4 @@
     "typescript": "5.9.3"
   }
 }
+
