@@ -1,0 +1,19 @@
+EdTech AI SaaS - Audit Report
+Generated: 2025-11-30 00:09:49
+
+Health Score: 90/100
+Files: 24/24
+Missing Files: 0
+Dependencies Installed: Yes
+Environment Configured: Yes
+
+Missing Files:
+
+
+Missing Environment Variables:
+NEXT_PUBLIC_APP_URL
+STRIPE_WEBHOOK_SECRET
+OPENAI_API_KEY
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+SUPABASE_SERVICE_ROLE_KEY
+STRIPE_SECRET_KEY
