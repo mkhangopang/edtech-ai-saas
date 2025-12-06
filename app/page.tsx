@@ -1,4 +1,4 @@
-import Link from 'next/link'
+﻿import Link from 'next/link'
 import { ArrowRight, BookOpen, Zap, Shield } from 'lucide-react'
 
 export default function Home() {

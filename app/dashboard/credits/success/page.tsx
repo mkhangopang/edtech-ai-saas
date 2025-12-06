@@ -1,73 +1,62 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+﻿"use client";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle, Loader2, ArrowRight } from "lucide-react";
 
-export default function SuccessPage() {
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
+function SuccessContent() {
   const searchParams = useSearchParams();
-  const sessionId = searchParams.get("session_id");
-
-  useEffect(() => {
-    // Give webhook time to process
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Processing your payment...</p>
-        </div>
-      </div>
-    );
-  }
+  const credits = searchParams.get("credits") || "50";
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
-        <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
-          <CheckCircle className="h-10 w-10 text-green-600" />
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+        <div className="mb-6">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg
+              className="w-8 h-8 text-green-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            Payment Successful!
+          </h1>
+          <p className="text-gray-600">
+            {credits} credits have been added to your account
+          </p>
         </div>
-
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">
-          Payment Successful! ðŸŽ‰
-        </h1>
-
-        <p className="text-gray-600 mb-8">
-          Your credits have been added to your account. You can now generate
-          lesson plans and quizzes instantly!
-        </p>
 
         <div className="space-y-3">
           <Link
+            href="/dashboard/generate"
+            className="block w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition"
+          >
+            Start Generating Content
+          </Link>
+          <Link
             href="/dashboard"
-            className="block w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2"
+            className="block w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 transition"
           >
             Go to Dashboard
-            <ArrowRight className="h-5 w-5" />
-          </Link>
-
-          <Link
-            href="/dashboard/generate"
-            className="block w-full border-2 border-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:border-gray-400 transition"
-          >
-            Start Generating
           </Link>
         </div>
-
-        <p className="text-sm text-gray-500 mt-6">
-          Session ID: {sessionId?.substring(0, 20)}...
-        </p>
       </div>
     </div>
+  );
+}
+
+export default function SuccessPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SuccessContent />
+    </Suspense>
   );
 }

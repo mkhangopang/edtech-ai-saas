@@ -1,7 +1,8 @@
-"use client";
+ï»¿"use client";
+import { Suspense } from "react";
 
 import { useEffect, useState, useRef } from "react";
-import { createBrowserClient }  // REMOVED — use server utils instead;
+import { createBrowserClient } from "@supabase/ssr";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -15,7 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-export default function GeneratePage() {
+function GeneratePageContent() {
   const [document, setDocument] = useState<any>(null);
   const [userCredits, setUserCredits] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -26,7 +27,7 @@ export default function GeneratePage() {
 
   const searchParams = useSearchParams();
   const router = useRouter();
-  const supabase = createBrowserClient();
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
   const docId = searchParams.get("docId");
   const outputRef = useRef<HTMLDivElement>(null);
 
@@ -354,5 +355,17 @@ export default function GeneratePage() {
         </div>
       </main>
     </div>
+  );
+}
+
+
+
+
+
+export default function GeneratePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <GeneratePageContent />
+    </Suspense>
   );
 }
