@@ -1,9 +1,5 @@
-<<<<<<< HEAD
 ﻿{
   "framework": "nextjs",
   "installCommand": "npm install --legacy-peer-deps",
   "buildCommand": "npm run build"
 }
-=======
-{"buildCommand":"npm run build","outputDirectory":".next","framework":"nextjs"}
->>>>>>> 45f217778e19004d17bec3ab74f423168640313c
