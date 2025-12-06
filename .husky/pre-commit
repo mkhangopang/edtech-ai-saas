@@ -1,0 +1,2 @@
+﻿npx json -I -f package.json || exit 1
+npx json -I -f vercel.json || exit 1
