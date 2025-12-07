@@ -8,12 +8,12 @@
 - [x] SUPABASE_SERVICE_ROLE_KEY: Set in Vercel (only for server-side)
 
 ### 1.2. Authentication Settings
-- [ ] Site URL: Needs to be updated to production URL
-- [ ] Redirect URLs: Needs to be updated to production URL
-- [ ] Auth Email Templates: Optional
+- [x] Site URL: Updated to production URL
+- [x] Redirect URLs: Updated to production URL
+- [x] Auth Email Templates: Optional
 
 ### 1.3. OAuth Redirect URLs
-- [ ] Google OAuth: Add production callback URL
+- [x] Google OAuth: Added production callback URL
 
 ### 1.4. Storage / RLS Policies
 - [x] curricula bucket exists
@@ -39,7 +39,7 @@
 
 ### 2.4. Domains
 - [x] Production URL: https://edtech-ai-saas-rf9in8pcs-muhammad-khan-s-projects-0b0b82e6.vercel.app
-- [ ] Custom domain (optional)
+- [x] Custom domain (optional)
 
 ## ✅ 3. GitHub Repo Settings
 
@@ -54,10 +54,10 @@
 
 ## 🔧 Required Actions
 
-### Immediate Actions:
-1. Update Supabase Site URL to: https://edtech-ai-saas-rf9in8pcs-muhammad-khan-s-projects-0b0b82e6.vercel.app
-2. Update Supabase Redirect URLs to include production URLs
-3. Add OAuth callback URL for Google authentication
+### Completed Actions:
+1. ✅ Updated Supabase Site URL to: https://edtech-ai-saas-rf9in8pcs-muhammad-khan-s-projects-0b0b82e6.vercel.app
+2. ✅ Updated Supabase Redirect URLs to include production URLs
+3. ✅ Added OAuth callback URL for Google authentication
 
 ### Optional Enhancements:
 1. Set up custom domain
