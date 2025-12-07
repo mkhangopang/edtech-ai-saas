@@ -41,31 +41,52 @@ function GeneratePageContent() {
 
   const loadDocument = async (retryCount = 0) => {
     try {
+      // Show loading state
+      if (retryCount === 0) {
+        setLoading(true);
+      }
+      
       const { data, error } = await supabase
         .from("documents")
         .select("*")
         .eq("id", docId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        if (retryCount < 3) {
+          // Retry on error
+          console.warn(`Document load attempt ${retryCount + 1} failed, retrying...`);
+          setTimeout(() => loadDocument(retryCount + 1), 800);
+          return;
+        } else {
+          throw error;
+        }
+      }
       
-      if (!data && retryCount < 3) {
-        // Retry if document not found (might still be saving)
-        setTimeout(() => loadDocument(retryCount + 1), 500);
-        return;
+      if (!data) {
+        if (retryCount < 3) {
+          // Retry if document not found (might still be saving)
+          console.warn(`Document not found on attempt ${retryCount + 1}, retrying...`);
+          setTimeout(() => loadDocument(retryCount + 1), 800);
+          return;
+        } else {
+          throw new Error("Document not found after multiple attempts");
+        }
       }
       
       setDocument(data);
+      console.log("Document loaded successfully:", data);
     } catch (error: any) {
       console.error("Error loading document:", error);
       
       if (retryCount < 3) {
         // Retry on error
-        setTimeout(() => loadDocument(retryCount + 1), 500);
+        console.warn(`Document load attempt ${retryCount + 1} failed, retrying...`);
+        setTimeout(() => loadDocument(retryCount + 1), 800);
         return;
       }
       
-      toast.error("Failed to load document");
+      toast.error("Failed to load document. Please try uploading again.");
       router.push("/dashboard");
     } finally {
       if (retryCount >= 3 || document) {
@@ -183,8 +204,8 @@ function GeneratePageContent() {
     return (
       <div className="text-center py-12">
         <Loader2 className="h-12 w-12 text-gray-300 mx-auto mb-3 animate-spin" />
-        <p className="text-gray-500">Loading document...</p>
-        <p className="text-sm text-gray-400 mt-2">If this takes too long, the document might still be processing</p>
+        <p className="text-gray-500">Loading your document...</p>
+        <p className="text-sm text-gray-400 mt-2">This may take a few moments</p>
       </div>
     );
   }

@@ -137,10 +137,8 @@ export default function DashboardPage() {
       toast.success('PDF uploaded successfully!')
       loadDocuments()
       
-      // Add a small delay to ensure the document is saved before redirecting
-      setTimeout(() => {
-        router.push(`/dashboard/generate?docId=${docData.id}`)
-      }, 500)
+      // Redirect to generate page with the document ID
+      router.push(`/dashboard/generate?docId=${docData.id}`)
     } catch (error: any) {
       console.error('Upload error:', error)
       toast.error(error.message || 'Failed to upload file')
