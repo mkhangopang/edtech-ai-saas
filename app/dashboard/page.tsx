@@ -12,7 +12,8 @@ import {
   CreditCard, 
   FileText,
   Loader2,
-  Plus
+  Plus,
+  Sparkles
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -136,7 +137,10 @@ export default function DashboardPage() {
       toast.success('PDF uploaded successfully!')
       loadDocuments()
       
-      router.push(`/dashboard/generate?docId=${docData.id}`)
+      // Add a small delay to ensure the document is saved before redirecting
+      setTimeout(() => {
+        router.push(`/dashboard/generate?docId=${docData.id}`)
+      }, 500)
     } catch (error: any) {
       console.error('Upload error:', error)
       toast.error(error.message || 'Failed to upload file')
@@ -259,12 +263,11 @@ export default function DashboardPage() {
           ) : (
             <div className="space-y-3">
               {documents.map((doc) => (
-                <Link
-                  key={doc.id}
-                  href={`/dashboard/generate?docId=${doc.id}`}
-                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition group"
-                >
-                  <div className="flex items-center gap-3">
+                <div key={doc.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition group">
+                  <Link
+                    href={`/dashboard/generate?docId=${doc.id}`}
+                    className="flex items-center gap-3 flex-1"
+                  >
                     <div className="bg-red-100 p-2 rounded">
                       <FileText className="h-5 w-5 text-red-600" />
                     </div>
@@ -276,9 +279,15 @@ export default function DashboardPage() {
                         {new Date(doc.created_at).toLocaleDateString()}
                       </p>
                     </div>
-                  </div>
-                  <Zap className="h-5 w-5 text-blue-600 opacity-0 group-hover:opacity-100 transition" />
-                </Link>
+                  </Link>
+                  <Link
+                    href={`/dashboard/generate?docId=${doc.id}`}
+                    className="flex items-center gap-2 text-sm bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Generate
+                  </Link>
+                </div>
               ))}
             </div>
           )}

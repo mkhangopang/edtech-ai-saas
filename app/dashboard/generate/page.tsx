@@ -39,7 +39,7 @@ function GeneratePageContent() {
     }
   }, [docId]);
 
-  const loadDocument = async () => {
+  const loadDocument = async (retryCount = 0) => {
     try {
       const { data, error } = await supabase
         .from("documents")
@@ -48,13 +48,29 @@ function GeneratePageContent() {
         .single();
 
       if (error) throw error;
+      
+      if (!data && retryCount < 3) {
+        // Retry if document not found (might still be saving)
+        setTimeout(() => loadDocument(retryCount + 1), 500);
+        return;
+      }
+      
       setDocument(data);
     } catch (error: any) {
       console.error("Error loading document:", error);
+      
+      if (retryCount < 3) {
+        // Retry on error
+        setTimeout(() => loadDocument(retryCount + 1), 500);
+        return;
+      }
+      
       toast.error("Failed to load document");
       router.push("/dashboard");
     } finally {
-      setLoading(false);
+      if (retryCount >= 3 || document) {
+        setLoading(false);
+      }
     }
   };
 
@@ -165,8 +181,10 @@ function GeneratePageContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      <div className="text-center py-12">
+        <Loader2 className="h-12 w-12 text-gray-300 mx-auto mb-3 animate-spin" />
+        <p className="text-gray-500">Loading document...</p>
+        <p className="text-sm text-gray-400 mt-2">If this takes too long, the document might still be processing</p>
       </div>
     );
   }
