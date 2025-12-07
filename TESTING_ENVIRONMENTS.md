@@ -5,7 +5,7 @@
 - Status: ✅ Running
 
 ## Production Environment (Vercel)
-- URL: https://edtech-ai-saas-rf9in8pcs-muhammad-khan-s-projects-0b0b82e6.vercel.app
+- URL: https://edtech-ai-saas-2gvb7lwoq-muhammad-khan-s-projects-0b0b82e6.vercel.app
 - Status: ✅ Deployed
 
 ## How to Test Both Environments
