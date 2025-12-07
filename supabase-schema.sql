@@ -1,50 +1,33 @@
-﻿-- Users credits table
-CREATE TABLE IF NOT EXISTS user_credits (
-  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  credits INTEGER DEFAULT 10 NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+﻿-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Credit transactions log
-CREATE TABLE IF NOT EXISTS credit_transactions (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  amount INTEGER NOT NULL,
-  description TEXT,
-  balance_after INTEGER NOT NULL,
+-- Users table
+CREATE TABLE users (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email TEXT NOT NULL UNIQUE,
+  full_name TEXT,
+  credits INTEGER DEFAULT 10,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Uploads table
-CREATE TABLE IF NOT EXISTS uploads (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  filename TEXT NOT NULL,
+-- Documents table
+CREATE TABLE documents (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  file_url TEXT NOT NULL,
   file_path TEXT NOT NULL,
-  file_size INTEGER,
   extracted_text TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Lesson plans table
-CREATE TABLE IF NOT EXISTS lesson_plans (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  upload_id UUID REFERENCES uploads(id) ON DELETE SET NULL,
-  title TEXT NOT NULL,
-  content TEXT NOT NULL,
-  grade_level TEXT,
-  subject TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Quizzes table
-CREATE TABLE IF NOT EXISTS quizzes (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  upload_id UUID REFERENCES uploads(id) ON DELETE SET NULL,
-  title TEXT NOT NULL,
-  questions JSONB NOT NULL,
+-- Generations table
+CREATE TABLE generations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,
+  credits_used INTEGER DEFAULT 1,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -60,43 +43,41 @@ CREATE TABLE IF NOT EXISTS transactions (
 );
 
 -- Enable RLS
-ALTER TABLE user_credits ENABLE ROW LEVEL SECURITY;
-ALTER TABLE credit_transactions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE uploads ENABLE ROW LEVEL SECURITY;
-ALTER TABLE lesson_plans ENABLE ROW LEVEL SECURITY;
-ALTER TABLE quizzes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE generations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies for user_credits
-CREATE POLICY "Users can view their own credits" ON user_credits
+-- Users policies
+CREATE POLICY "Users can view own profile" ON users
+  FOR SELECT USING (auth.uid() = id);
+
+CREATE POLICY "Users can update own profile" ON users
+  FOR UPDATE USING (auth.uid() = id);
+
+-- Documents policies
+CREATE POLICY "Users can view own documents" ON documents
   FOR SELECT USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can update their own credits" ON user_credits
+CREATE POLICY "Users can insert own documents" ON documents
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own documents" ON documents
   FOR UPDATE USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can insert their own credits" ON user_credits
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can delete own documents" ON documents
+  FOR DELETE USING (auth.uid() = user_id);
 
--- RLS Policies for uploads
-CREATE POLICY "Users can view their own uploads" ON uploads
+-- Generations policies
+CREATE POLICY "Users can view own generations" ON generations
   FOR SELECT USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can insert their own uploads" ON uploads
+CREATE POLICY "Users can insert own generations" ON generations
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
--- RLS Policies for lesson_plans
-CREATE POLICY "Users can view their own lesson plans" ON lesson_plans
+-- Transactions policies
+CREATE POLICY "Users can view own transactions" ON transactions
   FOR SELECT USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can insert their own lesson plans" ON lesson_plans
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
-
--- RLS Policies for quizzes
-CREATE POLICY "Users can view their own quizzes" ON quizzes
-  FOR SELECT USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can insert their own quizzes" ON quizzes
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- Function to initialize user credits on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -128,3 +109,8 @@ CREATE POLICY "Users can view their own files" ON storage.objects
 
 CREATE POLICY "Users can delete their own files" ON storage.objects
   FOR DELETE USING (bucket_id = 'curricula' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+-- Create indexes for better performance
+CREATE INDEX idx_documents_user_id ON documents(user_id);
+CREATE INDEX idx_generations_user_id ON generations(user_id);
+CREATE INDEX idx_transactions_user_id ON transactions(user_id);

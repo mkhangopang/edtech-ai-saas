@@ -22,7 +22,8 @@ function GeneratePageContent() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState("");
-  const [contentType, setContentType] = useState<"lesson" | "quiz">("lesson");
+  const [contentType, setContentType] = useState<"lesson" | "mcq" | "srq" | "erq">("lesson");
+  const [weeks, setWeeks] = useState(8);
   const [copied, setCopied] = useState(false);
 
   const searchParams = useSearchParams();
@@ -100,6 +101,7 @@ function GeneratePageContent() {
         body: JSON.stringify({
           documentId: docId,
           type: contentType,
+          weeks: weeks,
         }),
       });
 
@@ -242,26 +244,72 @@ function GeneratePageContent() {
                       Lesson Plan
                     </div>
                     <div className="text-sm text-gray-600">
-                      Comprehensive lesson with objectives and activities
+                      Week-based plans with SLO tagging
                     </div>
                   </button>
 
                   <button
-                    onClick={() => setContentType("quiz")}
+                    onClick={() => setContentType("mcq")}
                     disabled={generating}
                     className={`p-4 border-2 rounded-lg text-left transition ${
-                      contentType === "quiz"
+                      contentType === "mcq"
                         ? "border-blue-500 bg-blue-50"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
-                    <div className="font-semibold text-gray-900 mb-1">Quiz</div>
+                    <div className="font-semibold text-gray-900 mb-1">MCQs</div>
                     <div className="text-sm text-gray-600">
-                      Multiple choice and short answer questions
+                      Multiple choice questions
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => setContentType("srq")}
+                    disabled={generating}
+                    className={`p-4 border-2 rounded-lg text-left transition ${
+                      contentType === "srq"
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <div className="font-semibold text-gray-900 mb-1">SRQs</div>
+                    <div className="text-sm text-gray-600">
+                      Short response questions
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => setContentType("erq")}
+                    disabled={generating}
+                    className={`p-4 border-2 rounded-lg text-left transition ${
+                      contentType === "erq"
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <div className="font-semibold text-gray-900 mb-1">ERQs</div>
+                    <div className="text-sm text-gray-600">
+                      Extended response questions
                     </div>
                   </button>
                 </div>
               </div>
+
+              {contentType === "lesson" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Number of Weeks
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="16"
+                    value={weeks}
+                    onChange={(e) => setWeeks(Number(e.target.value))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              )}
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div className="flex items-start gap-2">
@@ -289,7 +337,9 @@ function GeneratePageContent() {
                 ) : (
                   <>
                     <Sparkles className="h-5 w-5" />
-                    Generate {contentType === "lesson" ? "Lesson Plan" : "Quiz"}
+                    Generate {contentType === "lesson" ? "Lesson Plan" : 
+                             contentType === "mcq" ? "MCQs" :
+                             contentType === "srq" ? "SRQs" : "ERQs"}
                   </>
                 )}
               </button>

@@ -1,219 +1,297 @@
-﻿'use client'
+'use client'
 
 import { useEffect, useState } from 'react'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@\/utils\/supabase\/client'
 import { toast } from 'sonner'
+import { 
+  BookOpen, 
+  LogOut, 
+  Upload, 
+  Zap, 
+  CreditCard, 
+  FileText,
+  Loader2,
+  Plus,
+  Mic
+} from 'lucide-react'
 import Link from 'next/link'
-import { Upload, FileText, BookOpen, CreditCard, LogOut, Sparkles } from 'lucide-react'
 
-interface Stats {
+interface UserData {
+  id: string
+  email: string
+  full_name: string
   credits: number
-  uploads: number
-  lessonPlans: number
-  quizzes: number
+}
+
+interface Document {
+  id: string
+  title: string
+  file_url: string
+  created_at: string
 }
 
 export default function DashboardPage() {
-  const router = useRouter()
-  const [user, setUser] = useState<any>(null)
-  const [stats, setStats] = useState<Stats>({
-    credits: 0,
-    uploads: 0,
-    lessonPlans: 0,
-    quizzes: 0,
-  })
+  const [user, setUser] = useState<UserData | null>(null)
+  const [documents, setDocuments] = useState<Document[]>([])
   const [loading, setLoading] = useState(true)
+  const [uploading, setUploading] = useState(false)
+  const router = useRouter()
+  const supabase = createClientComponentClient()
 
   useEffect(() => {
-    checkUser()
-    fetchStats()
+    loadUserData()
+    loadDocuments()
   }, [])
 
-  const checkUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      setUser(user)
-    }
-  }
-
-  const fetchStats = async () => {
+  const loadUserData = async () => {
     try {
-      // Fetch credits
-      const creditsRes = await fetch('/api/credits/check')
-      const creditsData = await creditsRes.json()
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      
+      if (!authUser) {
+        router.push('/login')
+        return
+      }
 
-      // Fetch uploads count
-      const { count: uploadsCount } = await supabase
-        .from('uploads')
-        .select('*', { count: 'exact', head: true })
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authUser.id)
+        .single()
 
-      // Fetch lesson plans count
-      const { count: lessonPlansCount } = await supabase
-        .from('lesson_plans')
-        .select('*', { count: 'exact', head: true })
-
-      // Fetch quizzes count
-      const { count: quizzesCount } = await supabase
-        .from('quizzes')
-        .select('*', { count: 'exact', head: true })
-
-      setStats({
-        credits: creditsData.credits || 0,
-        uploads: uploadsCount || 0,
-        lessonPlans: lessonPlansCount || 0,
-        quizzes: quizzesCount || 0,
-      })
-    } catch (error) {
-      console.error('Error fetching stats:', error)
+      if (error) throw error
+      setUser(data)
+    } catch (error: any) {
+      console.error('Error loading user:', error)
+      toast.error('Failed to load user data')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleSignOut = async () => {
+  const loadDocuments = async () => {
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      if (!authUser) return
+
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('user_id', authUser.id)
+        .order('created_at', { ascending: false })
+        .limit(10)
+
+      if (error) throw error
+      setDocuments(data || [])
+    } catch (error: any) {
+      console.error('Error loading documents:', error)
+    }
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.type !== 'application/pdf') {
+      toast.error('Please upload a PDF file')
+      return
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File size must be less than 10MB')
+      return
+    }
+
+    setUploading(true)
+
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      if (!authUser) throw new Error('Not authenticated')
+
+      const fileName = `${authUser.id}/${Date.now()}-${file.name}`
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('curricula')
+        .upload(fileName, file)
+
+      if (uploadError) throw uploadError
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('curricula')
+        .getPublicUrl(fileName)
+
+      const { data: docData, error: docError } = await supabase
+        .from('documents')
+        .insert([
+          {
+            user_id: authUser.id,
+            title: file.name,
+            file_url: publicUrl,
+            file_path: fileName,
+          },
+        ])
+        .select()
+        .single()
+
+      if (docError) throw docError
+
+      toast.success('PDF uploaded successfully!')
+      loadDocuments()
+      
+      router.push(`/dashboard/generate?docId=${docData.id}`)
+    } catch (error: any) {
+      console.error('Upload error:', error)
+      toast.error(error.message || 'Failed to upload file')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleLogout = async () => {
     await supabase.auth.signOut()
-    toast.success('Signed out successfully')
-    router.push('/login')
+    router.push('/')
+    router.refresh()
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white border-b sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-8 h-8 text-blue-600" />
-              <h1 className="text-2xl font-bold text-gray-900">EdTech AI</h1>
+              <BookOpen className="h-8 w-8 text-blue-600" />
+              <span className="text-xl font-bold text-gray-900">EdTech AI</span>
             </div>
+            
             <div className="flex items-center gap-4">
               <Link
-                href="/credits"
-                className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-medium hover:bg-blue-200 transition"
+                href="/dashboard/voice"
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition"
               >
-                <CreditCard className="w-4 h-4" />
-                {stats.credits} Credits
+                <Mic className="h-5 w-5" />
+                <span>Voice Notes</span>
               </Link>
-              <button
-                onClick={handleSignOut}
-                className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+              
+              <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-lg">
+                <Zap className="h-5 w-5 text-blue-600" />
+                <span className="font-semibold text-blue-900">{user?.credits || 0} credits</span>
+              </div>
+              
+              <Link
+                href="/dashboard/credits"
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition"
               >
-                <LogOut className="w-4 h-4" />
-                Sign Out
+                <CreditCard className="h-5 w-5" />
+                <span>Buy Credits</span>
+              </Link>
+              
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition"
+              >
+                <LogOut className="h-5 w-5" />
+                <span>Logout</span>
               </button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back{user?.email ? `, ${user.email.split('@')[0]}` : ''}!
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Welcome back, {user?.full_name || 'Teacher'}! 👋
+          </h1>
+          <p className="text-gray-600">
+            Upload a curriculum PDF to generate lesson plans and quizzes instantly
+          </p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-8">
+          <div className="flex flex-col items-center justify-center">
+            <div className="bg-blue-100 p-4 rounded-full mb-4">
+              <Upload className="h-8 w-8 text-blue-600" />
+            </div>
+            <h2 className="text-xl font-semibold mb-2">Upload Your Curriculum</h2>
+            <p className="text-gray-600 mb-6 text-center max-w-md">
+              Upload a PDF file and our AI will extract the content to generate educational materials
+            </p>
+            
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                accept=".pdf"
+                onChange={handleFileUpload}
+                disabled={uploading}
+                className="hidden"
+              />
+              <div className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center gap-2 disabled:opacity-50">
+                {uploading ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-5 w-5" />
+                    Choose PDF File
+                  </>
+                )}
+              </div>
+            </label>
+            
+            <p className="text-sm text-gray-500 mt-3">
+              Maximum file size: 10MB • PDF format only
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+          <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+            <FileText className="h-6 w-6 text-gray-600" />
+            Recent Documents
           </h2>
-          <p className="text-gray-600">Transform your curriculum into engaging educational content</p>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-          <div className="bg-white rounded-xl p-6 shadow-sm border">
-            <div className="flex items-center justify-between mb-2">
-              <CreditCard className="w-8 h-8 text-blue-600" />
-              <span className="text-2xl font-bold text-gray-900">{stats.credits}</span>
+          
+          {documents.length === 0 ? (
+            <div className="text-center py-12">
+              <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500">No documents uploaded yet</p>
+              <p className="text-sm text-gray-400">Upload your first PDF to get started</p>
             </div>
-            <p className="text-sm text-gray-600">Available Credits</p>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border">
-            <div className="flex items-center justify-between mb-2">
-              <Upload className="w-8 h-8 text-green-600" />
-              <span className="text-2xl font-bold text-gray-900">{stats.uploads}</span>
-            </div>
-            <p className="text-sm text-gray-600">PDFs Uploaded</p>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border">
-            <div className="flex items-center justify-between mb-2">
-              <BookOpen className="w-8 h-8 text-purple-600" />
-              <span className="text-2xl font-bold text-gray-900">{stats.lessonPlans}</span>
-            </div>
-            <p className="text-sm text-gray-600">Lesson Plans</p>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border">
-            <div className="flex items-center justify-between mb-2">
-              <FileText className="w-8 h-8 text-orange-600" />
-              <span className="text-2xl font-bold text-gray-900">{stats.quizzes}</span>
-            </div>
-            <p className="text-sm text-gray-600">Quizzes Created</p>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Link
-            href="/upload"
-            className="bg-white rounded-xl p-8 shadow-sm border hover:shadow-lg transition group"
-          >
-            <Upload className="w-12 h-12 text-blue-600 mb-4 group-hover:scale-110 transition" />
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Upload PDF</h3>
-            <p className="text-gray-600">Upload curriculum PDFs and extract text automatically</p>
-            <p className="text-sm text-blue-600 font-medium mt-4">Cost: 1 credit</p>
-          </Link>
-
-          <Link
-            href="/lesson-plans"
-            className="bg-white rounded-xl p-8 shadow-sm border hover:shadow-lg transition group"
-          >
-            <BookOpen className="w-12 h-12 text-purple-600 mb-4 group-hover:scale-110 transition" />
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Generate Lesson Plan</h3>
-            <p className="text-gray-600">Create detailed lesson plans from your curriculum content</p>
-            <p className="text-sm text-purple-600 font-medium mt-4">Cost: 5 credits</p>
-          </Link>
-
-          <Link
-            href="/quizzes"
-            className="bg-white rounded-xl p-8 shadow-sm border hover:shadow-lg transition group"
-          >
-            <FileText className="w-12 h-12 text-orange-600 mb-4 group-hover:scale-110 transition" />
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Create Quiz</h3>
-            <p className="text-gray-600">Generate multiple-choice quizzes to test student knowledge</p>
-            <p className="text-sm text-orange-600 font-medium mt-4">Cost: 3 credits</p>
-          </Link>
-        </div>
-
-        {/* Low Credits Warning */}
-        {stats.credits < 5 && (
-          <div className="mt-8 bg-yellow-50 border border-yellow-200 rounded-xl p-6">
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0">
-                <CreditCard className="w-6 h-6 text-yellow-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-yellow-900 mb-1">Low on credits</h3>
-                <p className="text-yellow-700 mb-3">
-                  You're running low on credits. Purchase more to continue creating amazing content!
-                </p>
+          ) : (
+            <div className="space-y-3">
+              {documents.map((doc) => (
                 <Link
-                  href="/credits"
-                  className="inline-flex items-center px-4 py-2 bg-yellow-600 text-white rounded-lg font-medium hover:bg-yellow-700 transition"
+                  key={doc.id}
+                  href={`/dashboard/generate?docId=${doc.id}`}
+                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition group"
                 >
-                  Buy More Credits
+                  <div className="flex items-center gap-3">
+                    <div className="bg-red-100 p-2 rounded">
+                      <FileText className="h-5 w-5 text-red-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900 group-hover:text-blue-600">
+                        {doc.title}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {new Date(doc.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <Zap className="h-5 w-5 text-blue-600 opacity-0 group-hover:opacity-100 transition" />
                 </Link>
-              </div>
+              ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </main>
     </div>
   )

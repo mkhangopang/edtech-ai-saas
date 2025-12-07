@@ -29,14 +29,14 @@ const packages: CreditPackage[] = [
     name: "Starter Pack",
     credits: 50,
     price: 9,
-    priceId: "price_starter_50", // Replace with real Stripe price ID
+    priceId: process.env.STRIPE_PRICE_ID_50_CREDITS || "price_starter_50",
   },
   {
     id: "pro",
     name: "Pro Pack",
     credits: 200,
     price: 29,
-    priceId: "price_pro_200", // Replace with real Stripe price ID
+    priceId: process.env.STRIPE_PRICE_ID_200_CREDITS || "price_pro_200",
     popular: true,
   },
 ];

@@ -44,6 +44,8 @@ A production-ready EdTech SaaS platform built with Next.js 14, Supabase, OpenAI/
 - 🔐 **Authentication**: Email + Google OAuth with Supabase
 - 📄 **PDF Upload**: Secure curriculum storage in Supabase Storage
 - 🤖 **AI Generation**: Streaming lesson plans & quizzes with OpenAI/Groq
+- 🎤 **Voice Recording**: Record voice notes, get AI transcriptions and summaries
+- 📅 **Calendar Events**: Automatic event detection from voice transcriptions
 - 💳 **Credit System**: 10 free credits → pay-as-you-go
 - 💰 **Stripe Payments**: $9 for 50 credits, $29 for 200 credits
 - 🎨 **Beautiful UI**: Tailwind CSS + Sonner toasts
@@ -54,7 +56,7 @@ A production-ready EdTech SaaS platform built with Next.js 14, Supabase, OpenAI/
 - **Frontend**: Next.js 14 (App Router), React 18, TypeScript
 - **Styling**: Tailwind CSS, Lucide Icons
 - **Backend**: Supabase (Auth, Database, Storage)
-- **AI**: OpenAI GPT-4 or Groq Llama 3.1
+- **AI**: OpenAI GPT-4 or Groq Llama 3.1, Groq Whisper (voice transcription)
 - **Payments**: Stripe Checkout + Webhooks
 - **Notifications**: Sonner
 
@@ -94,6 +96,9 @@ OPENAI_API_KEY=your_openai_api_key
 
 # OR Groq (alternative)
 # GROQ_API_KEY=your_groq_api_key
+
+# Groq API for Voice Transcription (required for voice features)
+GROQ_API_KEY=your_groq_api_key
 
 # Stripe
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
@@ -152,6 +157,39 @@ npm run dev
 ```
 
 Open http://localhost:3000
+
+## 🎵 Voice Recording Feature Setup
+
+The voice recording feature is now available! To enable it:
+
+1. **Get Groq API Key** (Free):
+   - Visit https://console.groq.com
+   - Sign up and create an API key
+   - Add to `.env.local`: `GROQ_API_KEY=your_key`
+
+2. **Run Database Migration**:
+   - Open Supabase SQL Editor
+   - Run `supabase-voice-migration.sql`
+
+3. **Create Storage Bucket**:
+   - Supabase Dashboard → Storage
+   - Create bucket named `voice-recordings` (private)
+   - Follow `SUPABASE_STORAGE_SETUP.md` for policies
+
+4. **Start Using**:
+   - Navigate to `/dashboard/voice`
+   - Click "New Voice Recording"
+   - Record, transcribe, and get AI summaries!
+
+**Detailed Setup Guide**: See [VOICE_FEATURE_SETUP.md](./VOICE_FEATURE_SETUP.md)
+
+**Features**:
+- 🎤 Browser-based voice recording (MediaRecorder API)
+- 🔊 Groq Whisper transcription (free tier, fast)
+- 🧠 OpenAI-powered summarization
+- 📅 Automatic calendar event detection
+- 💾 Audio file storage in Supabase
+- 💳 5 credits per recording
 
 ## 🚀 Deployment
 
@@ -295,13 +333,24 @@ const packages: CreditPackage[] = [
 
 ## 🎯 Features Roadmap
 
-- [ ] PDF text extraction with pdf-parse
+### ✅ Completed Features
+- [x] PDF text extraction with pdf-parse
+- [x] Voice recording and transcription
+- [x] AI-powered event detection from voice
+- [x] Automatic transcription summarization
+
+### 🚧 In Progress
+- [ ] Full Google Calendar OAuth integration
 - [ ] Save generated content to database
+
+### 📋 Planned Features
 - [ ] Export to PDF/Word
 - [ ] Team collaboration
 - [ ] Analytics dashboard
 - [ ] Custom AI models
 - [ ] White-label support
+- [ ] Speaker diarization
+- [ ] Multi-language voice transcription
 
 ## 📄 License
 
