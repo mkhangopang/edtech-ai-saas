@@ -1,0 +1,35 @@
+# Sample Curriculum for Testing
+
+## Grade 8 Mathematics - Linear Equations
+
+### Unit Overview
+This unit focuses on linear equations in one variable. Students will learn to solve equations, understand the concept of variables, and apply linear equations to real-world problems.
+
+### Learning Objectives
+By the end of this unit, students will be able to:
+1. Identify and define linear equations
+2. Solve linear equations using algebraic methods
+3. Apply linear equations to solve word problems
+4. Graph linear equations on coordinate planes
+5. Understand the relationship between equations and their graphical representations
+
+### Key Concepts
+- Variables and constants
+- Algebraic expressions
+- Solving one-step equations
+- Solving multi-step equations
+- Word problems involving linear equations
+- Coordinate plane plotting
+- Slope-intercept form
+
+### Assessment Methods
+- Formative assessments through classwork and homework
+- Quiz on solving equations
+- Project: Create real-world problems using linear equations
+- Unit test covering all objectives
+
+### Resources
+- Textbook chapters 3-5
+- Online interactive equation solver
+- Graph paper and rulers
+- Calculator for checking solutions
