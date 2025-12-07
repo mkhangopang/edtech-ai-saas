@@ -12,8 +12,7 @@ import {
   CreditCard, 
   FileText,
   Loader2,
-  Plus,
-  Mic
+  Plus
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -171,14 +170,6 @@ export default function DashboardPage() {
             </div>
             
             <div className="flex items-center gap-4">
-              <Link
-                href="/dashboard/voice"
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition"
-              >
-                <Mic className="h-5 w-5" />
-                <span>Voice Notes</span>
-              </Link>
-              
               <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-lg">
                 <Zap className="h-5 w-5 text-blue-600" />
                 <span className="font-semibold text-blue-900">{user?.credits || 0} credits</span>
@@ -210,7 +201,7 @@ export default function DashboardPage() {
             Welcome back, {user?.full_name || 'Teacher'}! 👋
           </h1>
           <p className="text-gray-600">
-            Upload a curriculum PDF to generate lesson plans and quizzes instantly
+            Upload curriculum PDFs to generate AI-powered lesson plans, MCQs, SRQs, and ERQs with Bloom's Taxonomy tagging
           </p>
         </div>
 
@@ -221,7 +212,7 @@ export default function DashboardPage() {
             </div>
             <h2 className="text-xl font-semibold mb-2">Upload Your Curriculum</h2>
             <p className="text-gray-600 mb-6 text-center max-w-md">
-              Upload a PDF file and our AI will extract the content to generate educational materials
+              Upload a curriculum PDF and generate week-based lesson plans, MCQs, SRQs, ERQs with automatic SLO tagging
             </p>
             
             <label className="cursor-pointer">
