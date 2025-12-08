@@ -1,7 +1,7 @@
 # Test Script for EdTech AI SaaS App
 
 ## Local Development Environment
-- URL: http://localhost:3000
+- URL: http://localhost:3001
 - Status: ✅ Running
 
 ## Production Environment (Vercel)
@@ -11,7 +11,7 @@
 ## How to Test Both Environments
 
 ### 1. Local Development Testing
-1. Open your browser and navigate to http://localhost:3000
+1. Open your browser and navigate to http://localhost:3001
 2. Sign up for a new account
 3. Upload a PDF curriculum
 4. Generate educational content:
