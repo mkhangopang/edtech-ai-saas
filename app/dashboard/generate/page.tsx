@@ -34,8 +34,13 @@ function GeneratePageContent() {
 
   useEffect(() => {
     if (docId) {
-      loadDocument();
-      loadUserCredits();
+      // Small delay to ensure document is saved before trying to load it
+      const timer = setTimeout(() => {
+        loadDocument();
+        loadUserCredits();
+      }, 300);
+      
+      return () => clearTimeout(timer);
     }
   }, [docId]);
 
@@ -53,10 +58,10 @@ function GeneratePageContent() {
         .single();
 
       if (error) {
-        if (retryCount < 3) {
+        if (retryCount < 5) {  // Increased retries
           // Retry on error
-          console.warn(`Document load attempt ${retryCount + 1} failed, retrying...`);
-          setTimeout(() => loadDocument(retryCount + 1), 800);
+          console.warn(`Document load attempt ${retryCount + 1} failed, retrying in 1 second...`);
+          setTimeout(() => loadDocument(retryCount + 1), 1000);  // Increased delay
           return;
         } else {
           throw error;
@@ -64,10 +69,10 @@ function GeneratePageContent() {
       }
       
       if (!data) {
-        if (retryCount < 3) {
+        if (retryCount < 5) {  // Increased retries
           // Retry if document not found (might still be saving)
-          console.warn(`Document not found on attempt ${retryCount + 1}, retrying...`);
-          setTimeout(() => loadDocument(retryCount + 1), 800);
+          console.warn(`Document not found on attempt ${retryCount + 1}, retrying in 1 second...`);
+          setTimeout(() => loadDocument(retryCount + 1), 1000);  // Increased delay
           return;
         } else {
           throw new Error("Document not found after multiple attempts");
@@ -79,17 +84,17 @@ function GeneratePageContent() {
     } catch (error: any) {
       console.error("Error loading document:", error);
       
-      if (retryCount < 3) {
+      if (retryCount < 5) {  // Increased retries
         // Retry on error
-        console.warn(`Document load attempt ${retryCount + 1} failed, retrying...`);
-        setTimeout(() => loadDocument(retryCount + 1), 800);
+        console.warn(`Document load attempt ${retryCount + 1} failed, retrying in 1 second...`);
+        setTimeout(() => loadDocument(retryCount + 1), 1000);  // Increased delay
         return;
       }
       
       toast.error("Failed to load document. Please try uploading again.");
       router.push("/dashboard");
     } finally {
-      if (retryCount >= 3 || document) {
+      if (retryCount >= 5 || document) {
         setLoading(false);
       }
     }

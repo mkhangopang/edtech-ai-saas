@@ -129,7 +129,7 @@ export default function DashboardPage() {
             file_path: fileName,
           },
         ])
-        .select('id')
+        .select()
         .single();
 
       if (docError) throw docError;
@@ -149,6 +149,9 @@ export default function DashboardPage() {
 
       toast.success('PDF uploaded successfully!');
       loadDocuments();
+      
+      // Small delay to ensure document is saved
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // Redirect to generate page with the document ID
       if (docData && docData.id) {
