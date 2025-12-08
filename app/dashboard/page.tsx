@@ -129,16 +129,20 @@ export default function DashboardPage() {
             file_path: fileName,
           },
         ])
-        .select()
-        .single()
+        .select('id')
+        .single();
 
-      if (docError) throw docError
+      if (docError) throw docError;
 
-      toast.success('PDF uploaded successfully!')
-      loadDocuments()
+      toast.success('PDF uploaded successfully!');
+      loadDocuments();
       
       // Redirect to generate page with the document ID
-      router.push(`/dashboard/generate?docId=${docData.id}`)
+      if (docData && docData.id) {
+        router.push(`/dashboard/generate?docId=${docData.id}`);
+      } else {
+        toast.error('Upload completed but redirect failed. Please click "Generate" button below.');
+      }
     } catch (error: any) {
       console.error('Upload error:', error)
       toast.error(error.message || 'Failed to upload file')
