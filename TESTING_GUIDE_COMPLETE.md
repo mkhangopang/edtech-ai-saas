@@ -80,9 +80,10 @@ Both environments should provide identical functionality:
 - Ensure OpenAI API key is active
 
 ### If Production Issues Occur:
-- Check Vercel environment variables
-- Verify Supabase authentication URLs
-- Confirm OpenAI API key in Vercel settings
+- Check Vercel environment variables in project settings
+- Verify Supabase authentication URLs include your production domain
+- Confirm OpenAI API key is correctly set in Vercel environment variables
+- Check Supabase RLS policies for storage bucket access
 
 ## 🎯 Success Criteria
 
