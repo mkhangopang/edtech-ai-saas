@@ -16,6 +16,7 @@ import {
   Sparkles
 } from 'lucide-react'
 import Link from 'next/link'
+import pdfParse from 'pdf-parse';
 
 interface UserData {
   id: string
@@ -119,6 +120,23 @@ export default function DashboardPage() {
         .from('curricula')
         .getPublicUrl(fileName)
 
+      // Extract text from PDF
+      let extractedText = '';
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const pdfData = await pdfParse(buffer);
+        extractedText = pdfData.text;
+        
+        // Limit text length to prevent issues with large files
+        if (extractedText.length > 100000) {
+          extractedText = extractedText.substring(0, 100000);
+        }
+      } catch (parseError) {
+        console.warn('Failed to extract text from PDF, using filename as fallback:', parseError);
+        extractedText = `PDF File: ${file.name}\n\nNote: Text extraction failed, AI will work with filename only.`;
+      }
+
       const { data: docData, error: docError } = await supabase
         .from('documents')
         .insert([
@@ -127,6 +145,7 @@ export default function DashboardPage() {
             title: file.name,
             file_url: publicUrl,
             file_path: fileName,
+            extracted_text: extractedText // Add extracted text to document
           },
         ])
         .select('id')
