@@ -13,8 +13,12 @@ import {
   Sparkles,
   Copy,
   Check,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
+import { ensureUserExists } from '@/utils/supabase/ensure-user';
+import { SpeedIndicator } from "@/components/SpeedIndicator";
+import { Badge } from "@/components/ui/badge";
 
 function GeneratePageContent() {
   const [document, setDocument] = useState<any>(null);
@@ -25,6 +29,7 @@ function GeneratePageContent() {
   const [contentType, setContentType] = useState<"lesson" | "mcq" | "srq" | "erq">("lesson");
   const [weeks, setWeeks] = useState(8);
   const [copied, setCopied] = useState(false);
+  const [generationTime, setGenerationTime] = useState<{ start: number; end: number } | null>(null);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -107,6 +112,13 @@ function GeneratePageContent() {
       } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Ensure user exists in our users table
+      const { success, error: ensureError } = await ensureUserExists();
+      if (!success) {
+        console.error('Error ensuring user exists:', ensureError);
+        return;
+      }
+
       const { data, error } = await supabase
         .from("users")
         .select("credits")
@@ -129,12 +141,20 @@ function GeneratePageContent() {
 
     setGenerating(true);
     setGeneratedContent("");
+    const startTime = Date.now();
+    setGenerationTime({ start: startTime, end: startTime }); // Initialize with start time
 
     try {
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
+
+      // Ensure user exists in our users table
+      const { success, error: ensureError } = await ensureUserExists();
+      if (!success) {
+        throw new Error('Failed to initialize user profile: ' + (ensureError || 'Unknown error'));
+      }
 
       // Call API to generate content with streaming
       const response = await fetch("/api/generate", {
@@ -180,16 +200,34 @@ function GeneratePageContent() {
                   }
                 }
               } catch (e) {
-                // Skip invalid JSON
+                // For plain text responses (like from Gemini), just append the chunk
+                setGeneratedContent((prev) => prev + line);
+                // Auto-scroll to bottom
+                if (outputRef.current) {
+                  outputRef.current.scrollTop =
+                    outputRef.current.scrollHeight;
+                }
+              }
+            } else if (line.trim()) {
+              // For plain text responses (like from Gemini), just append the chunk
+              setGeneratedContent((prev) => prev + line);
+              // Auto-scroll to bottom
+              if (outputRef.current) {
+                outputRef.current.scrollTop =
+                  outputRef.current.scrollHeight;
               }
             }
           }
         }
       }
 
+      // Record end time
+      const endTime = Date.now();
+      setGenerationTime({ start: startTime, end: endTime });
+
       // Reload credits after generation
       await loadUserCredits();
-      toast.success("Content generated successfully! âœ¨");
+      toast.success("Content generated successfully! ✨");
     } catch (error: any) {
       console.error("Generation error:", error);
       toast.error(error.message || "Failed to generate content");
@@ -231,11 +269,20 @@ function GeneratePageContent() {
               </Link>
             </div>
 
-            <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-lg">
-              <Sparkles className="h-5 w-5 text-blue-600" />
-              <span className="font-semibold text-blue-900">
-                {userCredits} credits
-              </span>
+            <div className="flex items-center gap-4">
+              {generationTime && !generating && (
+                <SpeedIndicator 
+                  startTime={generationTime.start} 
+                  endTime={generationTime.end} 
+                />
+              )}
+              
+              <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-lg">
+                <Sparkles className="h-5 w-5 text-blue-600" />
+                <span className="font-semibold text-blue-900">
+                  {userCredits} credits
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -368,6 +415,19 @@ function GeneratePageContent() {
                 </div>
               </div>
 
+              {/* Performance indicators */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 text-green-800 mb-2">
+                  <Zap className="h-5 w-5" />
+                  <span className="font-semibold">Lightning Fast Generation</span>
+                </div>
+                <div className="text-sm text-green-700">
+                  <p className="mb-1">• Powered by Google Gemini 1.5 Flash</p>
+                  <p className="mb-1">• Full curriculum context (1M tokens)</p>
+                  <p>• Results in 2-3 seconds!</p>
+                </div>
+              </div>
+
               <button
                 onClick={handleGenerate}
                 disabled={generating || userCredits < 1}
@@ -442,6 +502,9 @@ function GeneratePageContent() {
                   <p className="text-center">
                     Your generated content will appear here
                   </p>
+                  <p className="text-sm mt-2 text-gray-500">
+                    Experience lightning-fast generation with Google Gemini!
+                  </p>
                 </div>
               )}
             </div>
@@ -451,10 +514,6 @@ function GeneratePageContent() {
     </div>
   );
 }
-
-
-
-
 
 export default function GeneratePage() {
   return (

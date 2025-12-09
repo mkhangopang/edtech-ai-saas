@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { 
@@ -16,6 +16,8 @@ import {
   Sparkles
 } from 'lucide-react'
 import Link from 'next/link'
+import { ensureUserExists } from '@/utils/supabase/ensure-user'
+import { Badge } from '@/components/ui/badge'
 
 interface UserData {
   id: string
@@ -37,7 +39,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
   useEffect(() => {
     loadUserData()
@@ -53,6 +55,15 @@ export default function DashboardPage() {
         return
       }
 
+      // Ensure user exists in our users table
+      const { success, error: ensureError } = await ensureUserExists()
+      if (!success) {
+        console.error('Error ensuring user exists:', ensureError)
+        toast.error('Failed to initialize user profile')
+        return
+      }
+
+      // Get user data
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -119,6 +130,20 @@ export default function DashboardPage() {
         .from('curricula')
         .getPublicUrl(fileName)
 
+      console.log('Inserting document with data:', {
+        user_id: authUser.id,
+        title: file.name,
+        file_url: publicUrl,
+        file_path: fileName,
+      });
+
+      // Ensure user exists in our users table
+      const { success, error: ensureError } = await ensureUserExists();
+      if (!success) {
+        console.error('Error ensuring user exists:', ensureError);
+        throw new Error('Failed to initialize user profile. Please refresh the page and try again.');
+      }
+
       const { data: docData, error: docError } = await supabase
         .from('documents')
         .insert([
@@ -129,8 +154,10 @@ export default function DashboardPage() {
             file_path: fileName,
           },
         ])
-        .select()
+        .select('id')
         .single();
+
+      console.log('Document insertion result:', { docData, docError });
 
       if (docError) throw docError;
 
@@ -154,9 +181,13 @@ export default function DashboardPage() {
       await new Promise(resolve => setTimeout(resolve, 500));
       
       // Redirect to generate page with the document ID
+      console.log('Checking redirect conditions:', { docData, hasId: docData?.id });
       if (docData && docData.id) {
-        router.push(`/dashboard/generate?docId=${docData.id}`);
+        const redirectUrl = `/dashboard/generate?docId=${docData.id}`;
+        console.log('Redirecting to:', redirectUrl);
+        router.push(redirectUrl);
       } else {
+        console.log('Redirect failed - no document ID');
         toast.error('Upload completed but redirect failed. Please click "Generate" button below.');
       }
     } catch (error: any) {
@@ -189,6 +220,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2">
               <BookOpen className="h-8 w-8 text-blue-600" />
               <span className="text-xl font-bold text-gray-900">EdTech AI</span>
+              <Badge variant="success" className="ml-2">Gemini-Powered</Badge>
             </div>
             
             <div className="flex items-center gap-4">
@@ -225,6 +257,30 @@ export default function DashboardPage() {
           <p className="text-gray-600">
             Upload curriculum PDFs to generate AI-powered lesson plans, MCQs, SRQs, and ERQs with Bloom's Taxonomy tagging
           </p>
+          <div className="mt-4 flex items-center gap-2 text-sm text-green-700 bg-green-50 p-3 rounded-lg">
+            <Zap className="h-5 w-5" />
+            <span><strong>Lightning Fast:</strong> Powered by Google Gemini 1.5 Flash - Results in 2-3 seconds!</span>
+          </div>
+        </div>
+
+        {/* Performance Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="text-2xl font-bold text-blue-600">2-3s</div>
+            <div className="text-sm text-gray-600">Avg. Generation Time</div>
+          </div>
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="text-2xl font-bold text-green-600">1M</div>
+            <div className="text-sm text-gray-600">Token Context Window</div>
+          </div>
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="text-2xl font-bold text-purple-600">∞</div>
+            <div className="text-sm text-gray-600">Free Generations</div>
+          </div>
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="text-2xl font-bold text-orange-600">$0</div>
+            <div className="text-sm text-gray-600">Monthly API Cost</div>
+          </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-8">

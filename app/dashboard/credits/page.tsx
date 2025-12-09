@@ -13,6 +13,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
+import { ensureUserExists } from '@/utils/supabase/ensure-user';
 
 interface CreditPackage {
   id: string;
@@ -62,6 +63,14 @@ export default function CreditsPage() {
         return;
       }
 
+      // Ensure user exists in our users table
+      const { success, error: ensureError } = await ensureUserExists();
+      if (!success) {
+        console.error('Error ensuring user exists:', ensureError);
+        toast.error('Failed to initialize user profile');
+        return;
+      }
+
       const { data, error } = await supabase
         .from("users")
         .select("credits")
@@ -86,6 +95,12 @@ export default function CreditsPage() {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
+
+      // Ensure user exists in our users table
+      const { success, error: ensureError } = await ensureUserExists();
+      if (!success) {
+        throw new Error('Failed to initialize user profile: ' + (ensureError || 'Unknown error'));
+      }
 
       // Call API to create Stripe checkout session
       const response = await fetch("/api/checkout", {

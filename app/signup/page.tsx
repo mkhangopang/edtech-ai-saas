@@ -1,7 +1,7 @@
 ﻿'use client'
 
 import { useState } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -14,7 +14,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -28,31 +28,17 @@ export default function SignupPage() {
           data: {
             full_name: fullName,
           },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       })
 
       if (authError) throw authError
 
-      if (authData.user) {
-        const { error: profileError } = await supabase
-          .from('users')
-          .insert([
-            {
-              id: authData.user.id,
-              email: authData.user.email,
-              full_name: fullName,
-              credits: 10,
-            },
-          ])
-
-        if (profileError) {
-          console.error('Profile creation error:', profileError)
-        }
-
-        toast.success('Account created! Welcome to EdTech AI')
-        router.push('/dashboard')
-        router.refresh()
-      }
+      // The user profile will be created by the database trigger
+      // We just need to redirect to the dashboard
+      toast.success('Account created! Welcome to EdTech AI')
+      router.push('/dashboard')
+      router.refresh()
     } catch (error: any) {
       toast.error(error.message || 'Failed to create account')
     } finally {
